@@ -16,7 +16,8 @@ const database = {
         id: '123',
         name: 'Giovana',
         email: 'giovana@gmail.com',
-        password: '$2b$10$EFGC3dSktyL8LzyAf/Ipn.BrV0SVrys/PkbcdNqncVbLjPQCWvF/.',
+        // batata
+        password: '$2b$10$HGl0i51cDd1r7TJYBmqLCOHgInFj80ikDCJpdWqqfjSA/sNSMGGrO',
         entries: 0,
         joined: new Date()
         },
@@ -42,7 +43,7 @@ app.post("/signin", (req, res) => {
     // req.body.password === database.users[0].password){
         res.json('sucesso');
     } else{
-        res.status(400).json("errou");
+        res.status(400).json("errou: " + req.body.email + " - " + bcrypt.compareSync(req.body.password, database.users[0].password));
     }
 })
 
