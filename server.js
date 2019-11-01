@@ -41,7 +41,7 @@ app.post("/signin", (req, res) => {
    if (req.body.email === database.users[0].email && 
     bcrypt.compareSync(req.body.password, database.users[0].password)){
     // req.body.password === database.users[0].password){
-        res.json('sucesso');
+        res.json(database.users[0]);
     } else{
         res.status(400).json("errou: " + req.body.email + " - " + bcrypt.compareSync(req.body.password, database.users[0].password));
     }
@@ -75,7 +75,7 @@ app.get("/profile/:id", (req, res) => {
         res.status(400).json("id " + id + " não encontrado");
 })
 
-app.post("/image/", (req, res) => {
+app.put("/image/", (req, res) => {
     const { id } = req.body;   
     database.users.forEach(user => {
         if (user.id == id){
