@@ -1,6 +1,20 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+//knex :: para conectar com o banco de dados
+var knex = require('knex');
+const bd = knex({
+    client: 'pg',
+    connection: {
+      host : '127.0.0.1',
+      user : 'postgre',
+      password : '123456',
+      database : 'smart-brain'
+    }
+  });
+
+  console.log(bd.select('*').from('users'));
+
 // bcrypt
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
