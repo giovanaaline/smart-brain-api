@@ -22,79 +22,86 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-const database = {
-    users: [
-        {
-        id: '123',
-        name: 'Giovana',
-        email: 'giovana@gmail.com',
-        // batata
-        password: '$2b$10$HGl0i51cDd1r7TJYBmqLCOHgInFj80ikDCJpdWqqfjSA/sNSMGGrO',
-        entries: 0,
-        joined: new Date()
-        },
-        {
-            id: '124',
-            name: 'Maria',
-            email: 'maria@gmail.com',
-            passorwd: 'cafe',
-            entries: 0,
-            joined: new Date()
-        }
-    ]
-}
 
 app.get("/", (req, res) => {
     res.send(database.users);
 })
 
 app.post("/signin", (req, res) => {
-   
-   if (req.body.email === database.users[0].email && 
-    bcrypt.compareSync(req.body.password, database.users[0].password)){
-    // req.body.password === database.users[0].password){
-        res.json(database.users[0]);
-    } else{
-        res.status(400).json("errou: " + req.body.email + " - " + bcrypt.compareSync(req.body.password, database.users[0].password));
-    }
+    bd.select('email', 'hash').from('login').where('email', '=', req.body.email)
+    .then(resquery => {        
+        if (resquery.length){
+            const ehValido = bcrypt.compareSync(req.body.password, resquery[0].hash);
+            if (ehValido){
+                bd.select('*').from('users').where('email', '=', req.body.email)
+                .then(r => res.json(r[0]))
+                .catch(e => res.status(400).json('erro na obtenção dos dados do usuário'))                
+            }else{
+                res.status(400).json("erro de credencial");
+            }
+        }else{
+            res.status(400).json("erro de credencial");
+        }
+    })
+    .catch(err => res.status(400).json('erro técnico na validação'))
 })
 
-app.post("/register", (req, res) => {
-    const {email, name, password} = req.body;
-    const new_password = bcrypt.hashSync(password, saltRounds);
-    bd('users')
-    .returning('*')
-    .insert({
-        name: name,
-        email: email,
-        joined: new Date()
-    }).then(user => {
-        return res.json(user[0]);
-    })
-    .catch(err => res.status(400).json("não pode se registrar"));    
-})
+app.post('/register', (req, res) => {
+    const { email, name, password } = req.body;
+    const new_password = bcrypt.hashSync(password, saltRounds);   
+      bd.transaction(trx => {
+        trx.insert({
+          hash: new_password,
+          email: email
+        })
+        .into('login')
+        .returning('email')
+        .then(loginEmail => {
+          return trx('users')
+            .returning('*')
+            .insert({
+              email: loginEmail[0],
+              name: name,
+              joined: new Date()
+            })
+            .then(user => {
+              res.json(user[0]);
+            })
+        })
+        .then(trx.commit)
+        .catch(trx.rollback)
+      })
+      .catch(err => res.status(400).json('unable to register'))
+  })
 
 app.get("/profile/:id", (req, res) => {
     const { id } = req.params;
-    let found = false;
-    database.users.forEach(user => {
-        if (user.id == id){
-            found = true;
-            return res.json(user);
-        }            
-    })
-    if (!found)
-        res.status(400).json("id " + id + " não encontrado");
+    bd.select('*').from('users').where({id}) //geralmente ficaria 'id: id' em json, mas pode fazer direto pois tem o mesmo nome
+    .then(resultado => {
+        if (resultado.length){
+            res.json(resultado[0])
+        }
+        else{
+            res.status(400).json('id não encontrado!')
+        }
+    }).catch(error => res.status(400).json('erro ao buscar o id'));
 })
 
 app.put("/image/", (req, res) => {
-    const { id } = req.body;   
-    database.users.forEach(user => {
-        if (user.id == id){
-            user.entries ++;
-            return res.json(user.entries);
-        }            
-    })
+    const { id } = req.body;
+    bd('users')
+        .where('id', '=', id)
+        .increment('entries', 1) //tem o update, mas como vai somar, usou o increment
+        .returning('entries')
+        .then(resultado => {
+            if (resultado.length){
+                res.json(resultado[0]);
+            }
+            else{
+                res.status(400).json('não realizado o update')
+            }
+        })
+        .catch(error => res.status(400).json('erro ao incrementar a entrada desse usuário'))
 })
 
 app.listen(3000, () => {
