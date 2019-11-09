@@ -1,0 +1,30 @@
+const handleRegister = (req, res, bd, bcrypt, saltRounds) => {
+    const { email, name, password } = req.body;
+    const new_password = bcrypt.hashSync(password, saltRounds);   
+      bd.transaction(trx => {
+        trx.insert({
+          hash: new_password,
+          email: email
+        })
+        .into('login')
+        .returning('email')
+        .then(loginEmail => {
+          return trx('users')
+            .returning('*')
+            .insert({
+              email: loginEmail[0],
+              name: name,
+              joined: new Date()
+            })
+            .then(user => {
+              res.json(user[0]);
+            })
+        })
+        .then(trx.commit)
+        .catch(trx.rollback)
+      })
+      .catch(err => res.status(400).json('unable to register'))
+}
+module.exports = {
+    handleRegister: handleRegister
+};
