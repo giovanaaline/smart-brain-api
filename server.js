@@ -4,6 +4,9 @@ const cors = require('cors');
 //knex :: para conectar com o banco de dados
 var knex = require('knex');
 
+//email-validator:: instalado por conta para validar o e-mail
+var emailValidator = require('email-validator');
+
 const register = require('./controllers/register');
 const signin = require('./controllers/signin');
 const profile = require('./controllers/profile');
@@ -34,10 +37,11 @@ app.get("/", (req, res) => {
     res.send(database.users);
 })
 
-app.post('/register', (req, res) => {register.handleRegister(req, res, bd, bcrypt, saltRounds)})
-app.post("/signin", (req, res) => {signin.handleSignin(req, res, bd, bcrypt)})
+app.post('/register', (req, res) => {register.handleRegister(req, res, bd, bcrypt, saltRounds, emailValidator)})
+app.post("/signin", (req, res) => {signin.handleSignin(req, res, bd, bcrypt, emailValidator)})
 app.get("/profile/:id", (req, res) => {profile.handleProfile(req, res, bd)})
 app.put("/image/", (req, res) => {image.handleImage(req, res, bd)})
+app.post("/imageurl/", (req, res) => {image.handleApiCall(req, res)})
 
 app.listen(3000, () => {
     console.log("o aplicativo está rodando");
