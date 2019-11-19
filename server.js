@@ -43,6 +43,6 @@ app.get("/profile/:id", (req, res) => {profile.handleProfile(req, res, bd)})
 app.put("/image/", (req, res) => {image.handleImage(req, res, bd)})
 app.post("/imageurl/", (req, res) => {image.handleApiCall(req, res)})
 
-app.listen(3000, () => {
-    console.log("o aplicativo está rodando");
+app.listen(process.env.PORT || 3000, () => {
+    console.log(`o aplicativo está rodando na porta ${process.env.PORT}`);
 })
